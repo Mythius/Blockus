@@ -30,6 +30,9 @@
 		var board = new Grid(20,20,600/20);
 		var my_pieces = [];
 
+		var opts = {open:false};
+
+
 		mouse.start(canvas);
 		keys.start();
 
@@ -53,6 +56,7 @@
 				}
 				this.data = data;
 				this.color = color;
+				this.dock_x = 0;
 			}
 			rotate(){
 				let nd = [];
@@ -69,7 +73,7 @@
 				for(let i=0;i<5;i++) nd.push(new Array(5));
 				for(let i=0;i<5;i++){
 					for(let j=0;j<5;j++){
-						nd[i][4-j] = this.data[i][j];
+						nd[4-i][j] = this.data[i][j];
 					}
 				}
 				this.data = nd;
@@ -94,25 +98,37 @@
 					}
 				}
 			}
+			drawDocked(scrollx){
+				this.pgrid = new Grid(5,5,30);
+				this.draw(this.pgrid);
+				this.pgrid.offsetX = this.dock_x + scrollx;
+				this.pgrid.offsetY = 650;
+				this.pgrid.draw();
+			}
 		}
 
 		var imgs = {};
-		let colors = ['red'];
+		let colors = ['red','cancel','confirm','rotate','flip','confirm_lock'];
 		for(let c of colors){
 			let i = new Image;
 			i.src = c+'.png';
 			imgs[c]=i;
 		}
 
-		Tile.prototype.draw = function(){
+		Tile.prototype.draw = function(lines){
 			let ct = this.getCenter();
 			let w2 = this.grid.scale/2;
 			if(this.color in imgs) ctx.drawImage(imgs[this.color],ct.x-w2,ct.y-w2,w2*2,w2*2);
-			// else this.draw_box();
+			else if(lines) this.draw_box('lightgray');
 		}
-		Grid.prototype.draw = function(){
+		Grid.prototype.draw = function(lines=false){
 			this.forEach(tile=>{
-				tile.draw();
+				tile.draw(lines);
+			})
+		}
+		Grid.prototype.reset = function(){
+			this.forEach(tile=>{
+				tile.color = '#222';
 			})
 		}
 
@@ -141,44 +157,192 @@
 			pieces.push(new Piece('51xxx13x13x',color));
 			pieces.push(new Piece('51xxx12x22x',color));
 			pieces.push(new Piece('52x21xxxx',color));
-			return pieces;
+			return pieces.reverse();
 		}
 
-		let cur_piece = 0;
-
+		let cur_piece = null,scrollx=0,partx=0,mox=0,moy=0,mreset=false;
 		var placed_pieces = [];
 
 		function main(){
-			setTimeout(main,1000/30);
+			setTimeout(main,1000/60);
 			ctx.clearRect(-2,-2,canvas.width+2,canvas.height+2);
-			let at = board.getActiveTile();
-			if(!at){at={x:0,y:0}};
-			board.forEach(tile=>{tile.color='#222'});
-			let piece = my_pieces[cur_piece%my_pieces.length];
-			if(piece){
-				piece.setPos(at.x-2,at.y-2);
-				piece.draw(board);
+			board.draw(true);
+			if(mouse.down){
+				if(!cur_piece || mreset){
+					if(!cur_piece) cur_piece = getActiveGrid();
+					if(cur_piece || mreset){
+						mox = mouse.pos.x - cur_piece.pgrid.offsetX;
+						moy = mouse.pos.y - cur_piece.pgrid.offsetY;
+						mreset = false;
+					}
+				}
+				if(cur_piece){
+					let opt = touchingOpt();
+					if(opt){
+						if(opt == 'cancel'){
+							cur_piece = null;
+							opts.p = null;
+							opts.g = null;
+						} else if(opt == 'rotate'){
+							cur_piece.rotate();
+							cur_piece.pgrid.reset();
+							cur_piece.draw(cur_piece.pgrid);
+							cur_piece.pgrid.draw();
+						} else if(opt == 'flip'){
+							cur_piece.flip();
+							cur_piece.pgrid.reset();
+							cur_piece.draw(cur_piece.pgrid);
+							cur_piece.pgrid.draw();
+						} else if(opt == 'confirm'){
+							let {p,g} = opts;
+							placed_pieces.push(cur_piece);
+							let ix = my_pieces.indexOf(cur_piece);
+							cur_piece.x = g.x-p.x;
+							cur_piece.y = g.y-p.y;
+							if(ix != -1){
+								my_pieces.splice(ix,1);
+							}
+							opts.p = null;
+							opts.g = null;
+							cur_piece = null;
+						} else {
+							cur_piece.pgrid.draw();
+						}
+						if(cur_piece) drawOpts(cur_piece.pgrid.offsetX+130,cur_piece.pgrid.offsetY+130);
+					} else {
+						opts.open = false;
+						cur_piece.pgrid.offsetX = mouse.pos.x - mox;
+						cur_piece.pgrid.offsetY = mouse.pos.y - moy;
+						cur_piece.pgrid.draw();
+					}
+				}
+			} else {
+				if(cur_piece){
+					mreset = true;
+					let g = board.getActiveTile();
+					let p = cur_piece.pgrid.getActiveTile();
+					if(g && p){
+						opts.g = g;
+						opts.p = p;
+						calcOffscreenPieceDraw();
+						opts.open = true;
+						drawOpts(cur_piece.pgrid.offsetX+130,cur_piece.pgrid.offsetY+130)
+					} else if(opts.g && opts.p){
+						calcOffscreenPieceDraw();
+						opts.open = true;
+						drawOpts(cur_piece.pgrid.offsetX+130,cur_piece.pgrid.offsetY+130);
+					} else {
+						cur_piece.drawDocked(scrollx);
+						opts.open = true;
+						drawOpts(cur_piece.pgrid.offsetX+130,cur_piece.pgrid.offsetY+130);
+					}
+				}
 			}
-			for(let pp of placed_pieces) pp.draw(board);
-			board.draw();
-			if(mouse.down && piece){
-				let ix = cur_piece%my_pieces.length;
-				placed_pieces.push(my_pieces.splice(ix,1)[0]);
-				mouse.down = false;
+			for(let pp of placed_pieces){
+				pp.draw(board);
 			}
-			if(mouse.right){
-				cur_piece++;
-				mouse.right = false;
-			}
-			if(keys.down(' ')){
-				my_pieces[cur_piece%my_pieces.length]?.flip();
-				keys.keys[' ']=false;
+			draw_my_pieces();
+		}
+
+		function draw_my_pieces(){
+			let i=0;
+			scrollx = Math.max(Math.min(50,scrollx),-my_pieces.length*170+450)
+			for(let piece of my_pieces){
+				if(piece == cur_piece){
+					i++;
+					continue;
+				}
+				piece.dock_x = (i * 170) + 40;
+				piece.drawDocked(partx);
+				if(partx - scrollx < -2){
+					partx+=3;
+				} else if(partx - scrollx > 2){
+					partx-=3;
+				}
+				i++;
 			}
 		}
 
+		function getActiveGrid(){
+			for(let piece of my_pieces){
+				if(piece.pgrid.getActiveTile()){
+					return piece;
+				}
+			}
+		}
+
+		function calcOffscreenPieceDraw(){						
+			let {p,g} = opts;
+			let t = board.getTileAt(g.x-p.x,g.y-p.y)
+			let ct;
+			if(t){
+				ct = t.getCenter();
+			} else {
+				let ofx = 0;
+				let ofy = 6;
+				t = board.getTileAt(g.x-p.x,g.y-p.y+6);
+				if(!t){
+					ofx = 6;
+					ofy = 0;
+					t = board.getTileAt(g.x-p.x+6,g.y-p.y);
+				}
+				if(!t){
+					ofx = 6;
+					ofy = 6;
+					t = board.getTileAt(g.x-p.x+6,g.y-p.y+6);
+				}
+				ct = t.getCenter();
+				ct.x -= board.scale*ofx;
+				ct.y -= board.scale*ofy;
+			}
+			cur_piece.pgrid.offsetX = ct.x - board.scale/2;
+			cur_piece.pgrid.offsetY = ct.y - board.scale/2;
+			cur_piece.pgrid.draw();
+		}
+
+		function touchingOpt(){
+			if(!opts.open) return;
+			let mx=mouse.pos.x,my=mouse.pos.y,ox=opts.x,oy=opts.y,s=opts.spacing;
+			if(mx>ox&&mx<ox+40&&my>oy&&my<oy+40){
+				mouse.down = false;
+				return 'rotate';
+			}
+			if(mx>ox&&mx<ox+40&&my>oy+s&&my<oy+s+40){
+				mouse.down = false;
+				return 'flip';
+			}
+			if(mx>ox+s&&mx<ox+s+40&&my>oy&&my<oy+40){
+				mouse.down = false;
+				return 'cancel';
+			}
+			if(mx>ox+s&&mx<ox+s+40&&my>oy+s&&my<oy+s+40){
+				mouse.down = false;
+				if(opts.p && opts.g){
+					return 'confirm';
+				} else {
+					return 'attempted';
+				}
+			}
+		}
+
+		function drawOpts(x,y){
+			let spacing = 45;
+			if(x+spacing+40 > canvas.width){
+				drawOpts(x-200,y);
+				return;
+			}
+			opts.x = x;
+			opts.y = y;
+			opts.spacing = spacing;
+			ctx.drawImage(imgs.rotate,x,y);
+			ctx.drawImage(imgs.flip,x,y+spacing);
+			ctx.drawImage(imgs.cancel,x+spacing,y);
+			ctx.drawImage(opts.p&&opts.g?imgs.confirm:imgs.confirm_lock,x+spacing,y+spacing);
+		}
+
 		document.on('wheel',e=>{
-			my_pieces[cur_piece%my_pieces.length]?.rotate();
-		})
+			scrollx -= e.deltaY;
+		});
 
 		main();
 
