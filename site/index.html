@@ -9,7 +9,11 @@
 	<script src="helpers.js"></script>
 	<script src="grid.js"></script>
 	<script src="sprite.js"></script>
+	<script src="input.js"></script>
 	<style>
+		body{
+			margin: 0;
+		}
 		canvas{
 			background-color: lightgray;
 /*			width: 100%;*/
@@ -17,14 +21,166 @@
 	</style>
 </head>
 <body>
-	<canvas width=600 height=600></canvas>
+	<canvas width=600 height=900></canvas>
 	<script>
 		const canvas = obj('canvas');
 		const ctx = canvas.getContext('2d');
 
-		
+
 		var board = new Grid(20,20,600/20);
-		board.draw_boxes();
+		var my_pieces = [];
+
+		mouse.start(canvas);
+		keys.start();
+
+		class Piece{
+			constructor(code,color='red'){
+				let data = [];
+				let c = 0;
+				this.x = 0;
+				this.y = 0;
+				for(let i=0;i<5;i++) data.push(new Array(5).fill(false));
+				for(let i=0;i<5;i++){
+					for(let j=0;j<5;j++){
+						if(c>code.length) break;
+						let char = code[c++];
+						if(char=='x'){
+							data[j][i]=true;
+						} else {
+							j += Number(char)-1;
+						}
+					}
+				}
+				this.data = data;
+				this.color = color;
+			}
+			rotate(){
+				let nd = [];
+				for(let i=0;i<5;i++) nd.push(new Array(5));
+				for(let i=0;i<5;i++){
+					for(let j=0;j<5;j++){
+						nd[4-j][i] = this.data[i][j];
+					}
+				}
+				this.data = nd;
+			}
+			flip(){
+				let nd = [];
+				for(let i=0;i<5;i++) nd.push(new Array(5));
+				for(let i=0;i<5;i++){
+					for(let j=0;j<5;j++){
+						nd[i][4-j] = this.data[i][j];
+					}
+				}
+				this.data = nd;
+			}
+			setPos(x,y){
+				this.x = x;
+				this.y = y;
+			}
+			draw(board){
+				let p = this;
+				let x = p.x;
+				let y = p.y;
+				for(let i=0;i<5;i++){
+					for(let j=0;j<5;j++){
+						let t = board.getTileAt(x+i,y+j);
+						if(!t) continue;
+						if(p.data[i][j]){
+							t.color = p.color;
+						} else {
+							// t.color = 'blue';
+						}
+					}
+				}
+			}
+		}
+
+		var imgs = {};
+		let colors = ['red'];
+		for(let c of colors){
+			let i = new Image;
+			i.src = c+'.png';
+			imgs[c]=i;
+		}
+
+		Tile.prototype.draw = function(){
+			let ct = this.getCenter();
+			let w2 = this.grid.scale/2;
+			if(this.color in imgs) ctx.drawImage(imgs[this.color],ct.x-w2,ct.y-w2,w2*2,w2*2);
+			// else this.draw_box();
+		}
+		Grid.prototype.draw = function(){
+			this.forEach(tile=>{
+				tile.draw();
+			})
+		}
+
+		my_pieces = generatePieces('red');
+
+		function generatePieces(color){
+			let pieces = [];
+			pieces.push(new Piece('552x',color));
+			pieces.push(new Piece('551xx',color));
+			pieces.push(new Piece('551xxx',color));
+			pieces.push(new Piece('551xx32x',color));
+			pieces.push(new Piece('51xx22xx',color));
+			pieces.push(new Piece('55xxxx',color));
+			pieces.push(new Piece('51xx22x22x',color));
+			pieces.push(new Piece('52x31xxx',color));
+			pieces.push(new Piece('52xx12xx',color));
+			pieces.push(new Piece('51xxx12xx',color));
+			pieces.push(new Piece('55xxxxx',color));
+			pieces.push(new Piece('55xxxx13x',color));
+			pieces.push(new Piece('51x1x11xxx',color));
+			pieces.push(new Piece('51x31xxx12x',color));
+			pieces.push(new Piece('52x21xxx12x',color));
+			pieces.push(new Piece('51x31xxx13x',color));
+			pieces.push(new Piece('51xx22xx13x',color));
+			pieces.push(new Piece('51xx22xxx',color));
+			pieces.push(new Piece('51xxx13x13x',color));
+			pieces.push(new Piece('51xxx12x22x',color));
+			pieces.push(new Piece('52x21xxxx',color));
+			return pieces;
+		}
+
+		let cur_piece = 0;
+
+		var placed_pieces = [];
+
+		function main(){
+			setTimeout(main,1000/30);
+			ctx.clearRect(-2,-2,canvas.width+2,canvas.height+2);
+			let at = board.getActiveTile();
+			if(!at){at={x:0,y:0}};
+			board.forEach(tile=>{tile.color='#222'});
+			let piece = my_pieces[cur_piece%my_pieces.length];
+			if(piece){
+				piece.setPos(at.x-2,at.y-2);
+				piece.draw(board);
+			}
+			for(let pp of placed_pieces) pp.draw(board);
+			board.draw();
+			if(mouse.down && piece){
+				let ix = cur_piece%my_pieces.length;
+				placed_pieces.push(my_pieces.splice(ix,1)[0]);
+				mouse.down = false;
+			}
+			if(mouse.right){
+				cur_piece++;
+				mouse.right = false;
+			}
+			if(keys.down(' ')){
+				my_pieces[cur_piece%my_pieces.length]?.flip();
+				keys.keys[' ']=false;
+			}
+		}
+
+		document.on('wheel',e=>{
+			my_pieces[cur_piece%my_pieces.length]?.rotate();
+		})
+
+		main();
 
 
 
