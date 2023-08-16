@@ -1,4 +1,4 @@
 @echo off
 start http://localhost
-python server.py
+node server.js
 pause

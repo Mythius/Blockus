@@ -1,0 +1,24 @@
+{
+  "name": "blockus",
+  "version": "1.0.0",
+  "description": "Blockus Online Boardgame",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mythius/blockus.git"
+  },
+  "author": "Matthias Southwick",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mythius/blockus/issues"
+  },
+  "homepage": "https://github.com/mythius/blockus#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2"
+  }
+}

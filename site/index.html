@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta name="viewport" content="width=600, user-scalable=0">
 	<title>Blockus</title>
 	<link rel="icon" type="image/x-icon" href="icon.png">
 	<script src=/socket.io/socket.io.js></script>
@@ -11,6 +11,9 @@
 	<script src="sprite.js"></script>
 	<script src="input.js"></script>
 	<style>
+		html, body {
+		  overscroll-behavior: none;
+		}
 		body{
 			margin: 0;
 		}
@@ -108,7 +111,7 @@
 		}
 
 		var imgs = {};
-		let colors = ['red','cancel','confirm','rotate','flip','confirm_lock'];
+		let colors = ['red','blue','green','yellow','cancel','confirm','rotate','flip','confirm_lock'];
 		for(let c of colors){
 			let i = new Image;
 			i.src = c+'.png';
@@ -132,7 +135,7 @@
 			})
 		}
 
-		my_pieces = generatePieces('red');
+		my_pieces = generatePieces('yellow');
 
 		function generatePieces(color){
 			let pieces = [];
@@ -163,8 +166,8 @@
 		let cur_piece = null,scrollx=0,partx=0,mox=0,moy=0,mreset=false;
 		var placed_pieces = [];
 
-		function main(){
-			setTimeout(main,1000/60);
+		function main(c=true){
+			if(c) setTimeout(main,1000/60);
 			ctx.clearRect(-2,-2,canvas.width+2,canvas.height+2);
 			board.draw(true);
 			if(mouse.down){
@@ -339,6 +342,38 @@
 			ctx.drawImage(imgs.cancel,x+spacing,y);
 			ctx.drawImage(opts.p&&opts.g?imgs.confirm:imgs.confirm_lock,x+spacing,y+spacing);
 		}
+
+		Touch.init(dat=>{
+			if(dat.type == 'click'){
+				console.log('clicked');
+				mouse.pos.x = dat.x;
+				mouse.pos.y = dat.y;
+				ctx.beginPath();
+				ctx.fillStyle = 'red';
+				ctx.arc(dat.x,dat.y,10,0,Math.PI*2);
+				ctx.fill();
+				mouse.down = true;
+				main(false);
+				setTimeout(()=>{
+					mouse.down = false;
+				},500);
+			} else if(dat.type == 'scroll'){
+				mouse.pos.x = dat.x;
+				mouse.pos.y = dat.y;
+				if(cur_piece){
+					mouse.down = true;
+				} else if(Math.abs(dat.dx) > Math.abs(dat.dy)){
+					scrollx +=  dat.dx;
+				} else if(getActiveGrid()){
+					mouse.down = true;
+				} else {
+					scrollx +=  dat.dx;
+				}
+			} else if(dat.type == 'end'){
+				mouse.down = false;
+				console.log('scrollend');
+			}
+		});
 
 		document.on('wheel',e=>{
 			scrollx -= e.deltaY;
