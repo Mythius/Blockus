@@ -1,1 +1,33 @@
-<link rel="icon" type="image/x-icon" href="icon.png">
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Blockus</title>
+	<link rel="icon" type="image/x-icon" href="icon.png">
+	<script src=/socket.io/socket.io.js></script>
+	<script src="helpers.js"></script>
+	<script src="grid.js"></script>
+	<script src="sprite.js"></script>
+	<style>
+		canvas{
+			background-color: lightgray;
+/*			width: 100%;*/
+		}
+	</style>
+</head>
+<body>
+	<canvas width=600 height=600></canvas>
+	<script>
+		const canvas = obj('canvas');
+		const ctx = canvas.getContext('2d');
+
+		
+		var board = new Grid(20,20,600/20);
+		board.draw_boxes();
+
+
+
+	</script>
+</body>
+</html>

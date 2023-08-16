@@ -1,5 +1,109 @@
 This code defines several classes and functions related to vector operations, line segments, and animations.
 
+
+
+# Code Documentation 
+
+# grid.js
+
+## Tile Class
+
+The `Tile` class represents individual tiles within a grid.
+
+### Constructor
+
+#### `constructor(x, y, grid)`
+
+Creates a new instance of a `Tile` object.
+
+- `x` (number): The x-coordinate of the tile.
+- `y` (number): The y-coordinate of the tile.
+- `grid` (Grid): The grid object that contains the tile.
+
+### Methods
+
+#### `draw_box([color])`
+
+Draws a colored box representing the tile.
+
+- `color` (string, optional): The color of the box. Default is the tile's default color.
+
+#### `hasPoint(x, y)`
+
+Checks if the provided coordinates are within the boundaries of the tile.
+
+- `x` (number): The x-coordinate to check.
+- `y` (number): The y-coordinate to check.
+- Returns: `true` if the coordinates are within the tile's boundaries, otherwise `false`.
+
+#### `getCenter()`
+
+Calculates and returns the coordinates of the center of the tile.
+
+- Returns: An object with `x` and `y` properties representing the center coordinates.
+
+## Grid Class
+
+The `Grid` class represents a grid of tiles.
+
+### Constructor
+
+#### `constructor(w, h, [scale])`
+
+Creates a new instance of a `Grid` object.
+
+- `w` (number): The width of the grid in tiles.
+- `h` (number): The height of the grid in tiles.
+- `scale` (number, optional): The size of each tile. Default is 40.
+
+### Properties
+
+- `tiles` (array of arrays): A 2D array containing the `Tile` objects.
+- `width` (number): The width of the grid in tiles.
+- `height` (number): The height of the grid in tiles.
+- `scale` (number): The size of each tile.
+- `offsetX` (number): The horizontal offset of the grid.
+- `offsetY` (number): The vertical offset of the grid.
+
+### Methods
+
+#### `inBounds(x, y)`
+
+Checks if the provided coordinates are within the boundaries of the grid.
+
+- `x` (number): The x-coordinate to check.
+- `y` (number): The y-coordinate to check.
+- Returns: `true` if the coordinates are within the grid's boundaries, otherwise `false`.
+
+#### `getTileAt(x, y)`
+
+Retrieves the `Tile` object at the specified coordinates.
+
+- `x` (number): The x-coordinate of the tile.
+- `y` (number): The y-coordinate of the tile.
+- Returns: The `Tile` object at the given coordinates or `null` if the coordinates are out of bounds.
+
+#### `forEach(callback)`
+
+Iterates through each tile in the grid and applies a provided callback function.
+
+- `callback` (function): A function that takes a `Tile` object as a parameter. If the callback returns `true`, iteration stops.
+
+#### `draw_boxes()`
+
+Draws colored boxes for all tiles in the grid.
+
+#### `getActiveTile([x], [y])`
+
+Returns the `Tile` object that contains the specified coordinates or mouse position.
+
+- `x` (number, optional): The x-coordinate. If not provided, uses the mouse's x-coordinate.
+- `y` (number, optional): The y-coordinate. If not provided, uses the mouse's y-coordinate.
+- Returns: The `Tile` object that contains the provided or mouse coordinates, or `null` if not found.
+
+
+# sprite.js
+
 ## Vector Class
 The `Vector` class represents a 2D vector and has the following methods:
 - `distance(x1, y1, x2, y2)`: returns the distance between two points with coordinates `(x1, y1)` and `(x2, y2)`.
