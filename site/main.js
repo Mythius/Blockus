@@ -1,15 +1,18 @@
 const canvas = obj('canvas');
 const ctx = canvas.getContext('2d');
-
+const socket = io();
+socket.emit('blockus-join')
 
 var board = new Grid(20,20,600/20);
 var my_pieces = [];
+var my_turn = false,finished = false;
+var rot_times = 0;
 
 var opts = {open:false};
 
 
 mouse.start(canvas);
-keys.start();
+// keys.start();
 
 class Piece{
 	constructor(code,color='red'){
@@ -94,6 +97,7 @@ for(let c of colors){
 }
 
 Tile.prototype.draw = function(lines){
+	let ctx = this.grid.ctx;
 	let ct = this.getCenter();
 	let w2 = this.grid.scale/2;
 	if(this.color in imgs) ctx.drawImage(imgs[this.color],ct.x-w2,ct.y-w2,w2*2,w2*2);
@@ -109,8 +113,50 @@ Grid.prototype.reset = function(){
 		tile.color = '#222';
 	})
 }
+Grid.prototype.ctx = ctx;
+Grid.prototype.rotate = function(n){
+	let m = 4+(rot_times-n);
+	for(let t=0;t<m%4;t++){
+		let nd = [];
+		for(let i=0;i<20;i++) nd.push(new Array(20));
+		for(let i=0;i<20;i++){
+			for(let j=0;j<20;j++){
+				nd[19-j][i] = this.tiles[i][j].color;
+			}
+		}
+		for(let i=0;i<20;i++){
+			for(let j=0;j<20;j++){
+				this.tiles[i][j].color = nd[i][j];
+			}
+		}
+	}
+}
 
-my_pieces = generatePieces('green');
+Grid.prototype.toCode = function(){
+	var encoder = {
+		'#222': 0,
+		'green': 1,
+		'blue': 2,
+		'red':  3,
+		'yellow': 4
+	}
+	return this.tiles.flat().map(e=>encoder[e.color]);
+}
+
+Grid.prototype.fromCode = function(code){
+	this.reset();
+	var decoder = ['#222','green','blue','red','yellow'];
+	let i=0;
+	this.forEach(tile=>{
+		tile.color = decoder[code[i++]];
+	});
+}
+
+function setup(data){
+	my_pieces = generatePieces(data.color);
+	rot_times = data.i;
+}
+
 
 function generatePieces(color){
 	let pieces = [];
@@ -147,7 +193,7 @@ function main(c=true){
 	board.draw(true);
 	if(mouse.down){
 		if(!cur_piece || mreset){
-			if(!cur_piece) cur_piece = getActiveGrid();
+			if(!cur_piece && my_turn) cur_piece = getActiveGrid();
 			if(cur_piece || mreset){
 				mox = mouse.pos.x - cur_piece.pgrid.offsetX;
 				moy = mouse.pos.y - cur_piece.pgrid.offsetY;
@@ -183,6 +229,7 @@ function main(c=true){
 					opts.p = null;
 					opts.g = null;
 					cur_piece = null;
+					finished = true;
 				} else {
 					cur_piece.pgrid.draw();
 				}
@@ -231,6 +278,7 @@ function main(c=true){
 		pp.draw(board);
 	}
 	draw_my_pieces();
+	if(finished) finishTurn();
 }
 
 function draw_my_pieces(){
@@ -383,6 +431,12 @@ function drawOpts(x,y){
 	ctx.drawImage(opts.p&&opts.g&&is_valid_placement?imgs.confirm:imgs.confirm_lock,x+spacing,y+spacing);
 }
 
+function finishTurn(){
+	my_turn = false;
+	finished = false;
+	socket.emit('blockus-board',board.toCode());
+}
+
 Touch.init(dat=>{
 	if(dat.type == 'click'){
 		mouse.pos.x = dat.x;
@@ -417,4 +471,13 @@ document.on('wheel',e=>{
 	scrollx -= e.deltaY;
 });
 
-main();
+socket.on('blockus-nextturn',data=>{
+	my_turn = true;
+});
+
+socket.on('blockus-newboard',code=>{
+	board.fromCode(code.board);
+	board.rotate(code.turn);
+});
+
+// main();

@@ -16,15 +16,164 @@
 		}
 		body{
 			margin: 0;
-		}
-		canvas{
 			background-color: lightgray;
-/*			width: 100%;*/
+		}
+		#game{
+			background-color: lightgray;
+			z-index: -10;
+/*			left: 50%;
+			transform: translateX(-50%);
+			dispaly: block;
+			position: absolute;
+*/		}
+		main{
+			opacity: .8;
+			display: block;
+			width: 600px;
+			position: fixed;
+			top: 50%;
+			left: 50%;
+			height: 400px;
+			transform: translateY(-50%) translateX(-50%);
+			text-align: center;
+			box-sizing: border-box;
+			padding: 50px;
+			font-size: 30px;
+			font-family: block-font;
+		}
+		main>img{
+			width:100%;
+		}
+		main input,main button{
+			font-size: 30px;
+			font-family: block-font;
+		}
+		@font-face {
+			font-family: block-font;
+			src: url(block-font.ttf);
+		}
+		.floating{
+			position: fixed;
+			z-index: -5;
+		}
+		color{
+			display: inline-block;
+			width: 100px;
+			height: 100px;
+			border: 1px solid black;
 		}
 	</style>
 </head>
 <body>
-	<canvas width=600 height=900></canvas>
+	<main>
+		<img src=logo.png>
+		<data>
+			Name:&nbsp;&nbsp;<input placeholder="Enter Name Here" id=name><br><br>
+			Games:<br>
+			<button id=newgame>New Game</button><br>
+			<games></games>
+		</data>
+		<rules style='visibility:hidden;'>
+			<div id="colors"></div>
+			<div id="names"></div>
+		</rules>
+		<button style='visibility:hidden;' id="start">Start Game</button>
+	</main>
+	<canvas id=game width=600 height=900></canvas>
 	<script src="main.js"></script>
+	<script src="background.js"></script>
+	<script>
+		var host = false;
+
+
+		const lookup = {
+			red:'red',
+			green:'#080',
+			blue:'blue',
+			yellow:'yellow'
+		}
+
+		obj('#name').focus();
+
+		obj('#name').on('blur',name=>{
+			socket.emit('blockus-name',obj('#name').value);
+		})
+
+		document.on('keydown',e=>{if(e.keyCode == 13){obj('#name').blur();}});
+
+		obj('#newgame').on('click',e=>{
+			socket.emit('blockus-newgame');
+		});
+
+		obj('#start').on('click',e=>{
+			socket.emit('blockus-reqstart')
+		});
+
+		socket.on('blockus-host',e=>{
+			host = true;
+			show(obj('#start'));
+		});
+
+		socket.on('blockus-start',data=>{
+			stopBackground();
+			show(canvas);
+			hide(obj('main'));
+			setup(data);
+			main();
+		});
+
+		var buttons = [];
+		socket.on('blockus-lobby',games=>{
+			buttons = [];
+			obj('games').innerHTML = '';
+			for(let game of games){
+				let g = create('game',game+' ');
+				let b = create('button','Join');
+				b.name = game;
+				buttons.push(b);
+				g.appendChild(b);
+				g.innerHTML += '<br>';
+				obj('games').appendChild(g);
+			}
+			let b = [...buttons = obj('games').querySelectorAll('button')];
+			for(let bs of b){
+				bs.on('click',e=>{
+					socket.emit('blockus-jgame',bs.name);
+				})
+			}
+		});
+
+		socket.on('blockus-joinlobby',colors=>{
+			obj('data').style.display='none';
+			show(obj('rules'));
+			showColors(colors);
+		});
+
+		socket.on('blockus-playernames',players=>{
+			obj('#names').innerHTML = '';
+			for(let player of players){
+				let p = create('p',player.name);
+				p.style.color = lookup[player.color];
+				obj('#names').appendChild(p);
+			}
+		});
+
+		function hideMenu(){
+			obj('main').style.visibility = 'hidden';
+		}
+
+		function showColors(colors){
+			obj('#colors').innerHTML = '';
+			for(let color of colors){
+				let b = create('color');
+				b.style.backgroundColor = lookup[color];
+				b.on('click',e=>{
+					socket.emit('blockus-color',color);
+					obj('#colors').style.display='none';
+				});
+				obj('#colors').appendChild(b);
+			}
+		}
+	</script>
 </body>
 </html>
