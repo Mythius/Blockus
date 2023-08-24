@@ -101,7 +101,7 @@ class Game{
 			for(let player of this.players){
 				if(player){
 					console.log(player.name+' '+player.final_score);
-					if(player.final_score < winner.final_score){
+					if(player.final_score <= winner.final_score){
 						winner = player;
 					}
 				}
@@ -177,6 +177,7 @@ function emitGames(){
 }
 
 function disconnect(player){
+	if(players.indexOf(player)==-1) return;
 	if(player.game?.host==player){
 		player.game.end();
 	}

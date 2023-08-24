@@ -496,6 +496,7 @@ socket.on('blockus-msg',data=>{
 obj('#resign').on('click',e=>{
 	if(confirm('Are you sure you want to finish?')){
 		let final_score = my_pieces.map(e=>e.getValue()).reduce((a,b)=>a+b);
+		if(my_pieces.length==0) final_score = 0;
 		socket.emit('blockus-resign',final_score);
 		obj('#resign').disabled = true;
 	}
