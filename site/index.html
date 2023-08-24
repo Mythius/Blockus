@@ -34,7 +34,7 @@
 			top: 50%;
 			left: 50%;
 			height: 400px;
-			transform: translateY(-50%) translateX(-50%);
+			transform: translateY(-80%) translateX(-50%);
 			text-align: center;
 			box-sizing: border-box;
 			padding: 50px;
@@ -62,6 +62,18 @@
 			height: 100px;
 			border: 1px solid black;
 		}
+		message{
+			position: fixed;
+			left: 0;
+			bottom: 0;
+			margin-left: 5px;
+		}
+		#resign{
+			position: fixed;
+			left: 600px;
+			transform: translateX(-100%);
+			bottom: 0;
+		}
 	</style>
 </head>
 <body>
@@ -80,6 +92,8 @@
 		<button style='visibility:hidden;' id="start">Start Game</button>
 	</main>
 	<canvas id=game width=600 height=900></canvas>
+	<message>Join a game to play with someone</message>
+	<button disabled id=resign style='visibility:hidden;'>I can't Play Anymore</button>
 	<script src="main.js"></script>
 	<script src="background.js"></script>
 	<script>
@@ -95,8 +109,18 @@
 
 		obj('#name').focus();
 
-		obj('#name').on('blur',name=>{
-			socket.emit('blockus-name',obj('#name').value);
+		try{
+			let nfc = document.cookie.split(';').filter(e=>e.match('name='))[0].replace('name=','');
+			if(nfc){
+				obj('#name').value = nfc;
+				socket.emit('blockus-name',nfc);
+			}
+		} catch(e){}
+
+		obj('#name').on('blur',e=>{
+			let name = obj('#name').value;
+			socket.emit('blockus-name',name);
+			document.cookie = 'name='+name;
 		})
 
 		document.on('keydown',e=>{if(e.keyCode == 13){obj('#name').blur();}});
@@ -118,9 +142,18 @@
 			stopBackground();
 			show(canvas);
 			hide(obj('main'));
+			show(obj('#resign'));
 			setup(data);
 			main();
 		});
+
+		socket.on('blockus-pdc',name=>{
+			msg(name+' disconnected');
+		});
+
+		function msg(dt=''){
+			obj('message').innerHTML = dt;
+		}
 
 		var buttons = [];
 		socket.on('blockus-lobby',games=>{

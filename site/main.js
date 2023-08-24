@@ -1,7 +1,7 @@
 const canvas = obj('canvas');
 const ctx = canvas.getContext('2d');
 const socket = io();
-socket.emit('blockus-join')
+socket.emit('blockus-join');
 
 var board = new Grid(20,20,600/20);
 var my_pieces = [];
@@ -85,6 +85,9 @@ class Piece{
 	}
 	hasSquare(x,y){
 		return this.data[x][y];
+	}
+	getValue(){
+		return this.data.flat().filter(e=>e).length;
 	}
 }
 
@@ -435,6 +438,7 @@ function finishTurn(){
 	my_turn = false;
 	finished = false;
 	socket.emit('blockus-board',board.toCode());
+	obj('#resign').disabled=true;
 }
 
 Touch.init(dat=>{
@@ -473,11 +477,28 @@ document.on('wheel',e=>{
 
 socket.on('blockus-nextturn',data=>{
 	my_turn = true;
+	obj('#resign').disabled=false;
 });
 
 socket.on('blockus-newboard',code=>{
 	board.fromCode(code.board);
 	board.rotate(code.turn);
+});
+
+socket.on('blockus-turname',name=>{
+	msg(`${name}\'s Turn!`);
+});
+
+socket.on('blockus-msg',data=>{
+	msg(data);
+});
+
+obj('#resign').on('click',e=>{
+	if(confirm('Are you sure you want to finish?')){
+		let final_score = my_pieces.map(e=>e.getValue()).reduce((a,b)=>a+b);
+		socket.emit('blockus-resign',final_score);
+		obj('#resign').disabled = true;
+	}
 });
 
 // main();
