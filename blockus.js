@@ -95,12 +95,10 @@ class Game{
 	}
 	checkGameOver(){
 		let player_remaining = this.players.filter(e=>e&&e.canPlay).length;
-		console.log(player_remaining);
 		if(player_remaining == 0){
 			let winner = {final_score:100,name:'error'};
 			for(let player of this.players){
 				if(player){
-					console.log(player.name+' '+player.final_score);
 					if(player.final_score <= winner.final_score){
 						winner = player;
 					}
@@ -119,7 +117,6 @@ class Game{
 	}
 	cantPlay(player,final_score){
 		player.canPlay = false;
-		console.log(final_score);
 		player.final_score = final_score;
 		this.nextTurnInit();
 	}
