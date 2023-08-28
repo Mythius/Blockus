@@ -70,9 +70,14 @@ class Touch{
     static touches = [];
     static resolved = [];
     static init(callback){
+
+        function fixid(id){
+            return Math.abs(id%10);
+        }
+
         document.on('touchstart',e=>{
             for(let touch of e.changedTouches){
-                Touch.touches[touch.identifier] = touch;
+                Touch.touches[fixid(touch.identifier)] = touch;
                 // try{e.preventDefault()}catch(e){};
             }
         });
@@ -80,7 +85,7 @@ class Touch{
         document.on('touchmove',e=>{
             if(Touch.touches.filter(e=>e).length == 1){
                 for(let touch of e.changedTouches){
-                    let last_pos = Touch.touches[touch.identifier];
+                    let last_pos = Touch.touches[fixid(touch.identifier)];
                     callback({
                         type: 'scroll',
                         x: touch.clientX,
@@ -105,7 +110,7 @@ class Touch{
                             dy: touch.clientY - last_pos.clientY
                         });
                         touch.action='zoom';
-                        Touch.touches[touch.identifier] = touch;
+                        Touch.touches[fixid(touch.identifier)] = touch;
                     } else {
                         tmps.push({
                             x: last_pos.clientX,
@@ -138,7 +143,7 @@ class Touch{
 
         document.on('touchend',e=>{
             for(let touch of e.changedTouches){
-                let ot = Touch.touches[touch.identifier];
+                let ot = Touch.touches[fixid(touch.identifier)];
                 if(!ot.action){
                     let dx=ot.clientX-touch.clientX,dy=ot.clientY-touch.clientY;
                     let br = ot.target.getBoundingClientRect();
