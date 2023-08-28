@@ -95,7 +95,7 @@ class Touch{
                         target: last_pos.target
                     });
                     touch.action='scroll';
-                    Touch.touches[touch.identifier] = touch;
+                    Touch.touches[fixid(touch.identifier)] = touch;
                 } 
             } else {
                 let counter = 0;
@@ -164,7 +164,7 @@ class Touch{
                         target:ot.target
                     });
                 }
-                Touch.touches[touch.identifier] = null;
+                Touch.touches[fixid(touch.identifier)] = null;
             }
         });
     }
