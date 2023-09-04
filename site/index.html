@@ -76,7 +76,7 @@
 		}
 	</style>
 </head>
-<body>
+<body onbeforeunload="return leaving()">
 	<main>
 		<img src=logo.png>
 		<data>
@@ -97,6 +97,9 @@
 	<script src="main.js"></script>
 	<script src="background.js"></script>
 	<script>
+
+		function leaving(){ return "Are you sure you want to leave?" }
+		
 		var host = false;
 
 
